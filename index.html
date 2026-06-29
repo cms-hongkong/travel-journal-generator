@@ -77,7 +77,7 @@
             margin-right: 15px;
         }
 
-        #days-val {
+        #days-val, #hotel-val {
             font-weight: bold;
             color: #3498db;
             font-size: 12pt;
@@ -160,7 +160,7 @@
 
             .pdf-page {
                 width: 210mm;
-                height: 296.8mm; /* 預留些微邊距防止分頁溢出 */
+                height: 296.8mm;
                 page-break-after: always;
                 position: relative;
                 background-color: #ffffff;
@@ -169,7 +169,16 @@
                 box-sizing: border-box;
             }
 
-            .pdf-page:last-child {
+            /* 完全空白頁面樣式設定 */
+            .blank-page {
+                width: 210mm;
+                height: 296.8mm;
+                page-break-after: always;
+                background-color: #ffffff;
+                box-sizing: border-box;
+            }
+
+            .pdf-page:last-child, .blank-page:last-child {
                 page-break-after: avoid;
             }
 
@@ -177,7 +186,7 @@
             .ul-line {
                 border-bottom: 1px solid #000000;
                 display: inline-block;
-                min-width: 100px;
+                min-width: 60px;
                 height: 22px;
                 vertical-align: bottom;
                 margin-bottom: 2px;
@@ -199,7 +208,7 @@
                 background-color: #fafafa;
             }
 
-            /* 頁碼樣式 */
+            /* 頁碼及頁尾標籤 */
             .page-number {
                 position: absolute;
                 bottom: 12mm;
@@ -210,7 +219,24 @@
                 color: #888888;
             }
 
-            /* 通用排版表格 (取代 flex/grid 確保不掉頁) */
+            .footer-left {
+                position: absolute;
+                bottom: 12mm;
+                left: 15mm;
+                font-size: 10pt;
+                color: #888888;
+            }
+
+            .footer-right {
+                position: absolute;
+                bottom: 12mm;
+                right: 15mm;
+                font-size: 10pt;
+                color: #888888;
+                text-align: right;
+            }
+
+            /* 通用排版表格 */
             .layout-table {
                 display: table;
                 width: 100%;
@@ -231,24 +257,24 @@
 
             .data-table th, .data-table td {
                 border: 1px solid #CCCCCC;
-                padding: 10px;
+                padding: 8px;
                 text-align: left;
                 vertical-align: middle;
-                font-size: 12pt;
+                font-size: 11pt;
             }
 
             .data-table th {
                 background-color: #f9f9f9;
                 font-weight: bold;
-                font-size: 14pt;
+                font-size: 12pt;
             }
 
             /* 字體規格 */
-            .title-large { font-size: 28pt; font-weight: bold; }
+            .title-large { font-size: 56pt; font-weight: bold; } /* 放大一倍 */
             .title-main { font-size: 16pt; font-weight: bold; margin-bottom: 15px; }
             .title-sub { font-size: 14pt; font-weight: bold; margin-top: 20px; margin-bottom: 10px; color: #111111; }
-            .text-normal { font-size: 12pt; line-height: 1.8; }
-            .text-muted { font-size: 12pt; color: #888888; }
+            .text-normal { font-size: 11pt; line-height: 1.8; }
+            .text-muted { font-size: 11pt; color: #888888; }
 
             /* 封面專用頁面樣式 */
             .cover-container {
@@ -257,19 +283,13 @@
                 position: relative;
             }
             .cover-title {
-                margin-top: 40mm;
+                margin-top: 70mm;
                 padding: 0 10mm;
-                line-height: 1.4;
-            }
-            .cover-box {
-                width: 100mm;
-                height: 100mm;
-                line-height: 100mm;
-                margin: 30mm auto 0 auto;
+                line-height: 1.3;
             }
             .cover-date {
                 position: absolute;
-                bottom: 15mm;
+                bottom: 20mm;
                 right: 5mm;
                 font-size: 12pt;
             }
@@ -277,11 +297,11 @@
             /* 天氣與時間區塊 */
             .header-right-meta {
                 text-align: right;
-                font-size: 12pt;
+                font-size: 11pt;
                 line-height: 1.6;
             }
             .weather-icons {
-                font-size: 14pt;
+                font-size: 13pt;
                 letter-spacing: 5px;
                 border: 1px dashed #CCCCCC;
                 padding: 2px 6px;
@@ -299,7 +319,7 @@
         
         <div class="form-group">
             <label for="trip-name">旅程名稱</label>
-            <input type="text" id="trip-name" placeholder="例如：2026 東京初夏之旅 / 曼谷浪漫遊" value="2026 我的完美旅程">
+            <input type="text" id="trip-name" placeholder="例如：2026 東京初夏之旅 / 曼谷浪漫遊" value="首爾之旅 2026">
         </div>
 
         <div class="form-group">
@@ -309,7 +329,7 @@
 
         <div class="form-group">
             <label for="currency">貨幣符號</label>
-            <input type="text" id="currency" placeholder="例如：¥ / ฿ / € / $" value="¥">
+            <input type="text" id="currency" placeholder="例如：¥ / ฿ / € / $" value="₩">
         </div>
 
         <div class="form-group">
@@ -320,6 +340,18 @@
                 </div>
                 <div class="slider-cell" style="width: 50px; text-align: right;">
                     <span id="days-val">5</span>日
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="hotel-count">住宿數量 (1 - 10 間)</label>
+            <div class="slider-container">
+                <div class="slider-cell">
+                    <input type="range" id="hotel-count" min="1" max="10" value="1" oninput="updateHotelValue(this.value)">
+                </div>
+                <div class="slider-cell" style="width: 50px; text-align: right;">
+                    <span id="hotel-val">1</span>間
                 </div>
             </div>
         </div>
@@ -337,22 +369,20 @@
         // 初始化出發日期為今日
         document.getElementById('start-date').valueAsDate = new Date();
 
-        // 更新滑塊數值與動態重新生成城市輸入表單
         function updateDaysValue(val) {
             document.getElementById('days-val').innerText = val;
             renderCityInputs(parseInt(val));
+        }
+
+        function updateHotelValue(val) {
+            document.getElementById('hotel-val').innerText = val;
         }
 
         // 動態渲染每日城市輸入框
         function renderCityInputs(days) {
             const container = document.getElementById('city-grid-container');
             container.innerHTML = '';
-            
-            const defaultCities = ["東京", "河口湖", "箱根", "鐮倉", "橫濱"];
-            
             for (let i = 1; i <= days; i++) {
-                const defaultVal = defaultCities[(i - 1) % defaultCities.length];
-                
                 const item = document.createElement('div');
                 item.className = 'city-item';
                 
@@ -366,7 +396,7 @@
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.id = `city-day-${i}`;
-                input.value = `${defaultVal}`;
+                input.value = `首爾`;
                 
                 inputCell.appendChild(input);
                 item.appendChild(labelCell);
@@ -378,9 +408,32 @@
         // 預先執行一次
         renderCityInputs(5);
 
-        // 根據出發日期與天數計算日期與星期幾
+        // 輔助功能：生成隨機角落小圖案
+        function generateCornerIcons() {
+            const icons = ['✈️', '🌍', '🧳', '📷', '🚢', '🚂', '🗺️', '🧭'];
+            // 隨機打亂並挑選 3 個
+            const shuffled = [...icons].sort(() => 0.5 - Math.random());
+            const selectedIcons = shuffled.slice(0, 3);
+            
+            // 四個角落的位置樣式
+            const positions = [
+                'top: 6mm; left: 6mm;',
+                'top: 6mm; right: 6mm;',
+                'bottom: 18mm; left: 6mm;',
+                'bottom: 18mm; right: 6mm;'
+            ];
+            const shuffledPos = positions.sort(() => 0.5 - Math.random());
+            
+            let iconsHtml = '';
+            for (let i = 0; i < 3; i++) {
+                iconsHtml += `<div style="position: absolute; ${shuffledPos[i]} color: #D0D0D0; font-size: 14pt; opacity: 0.8; user-select: none;">${selectedIcons[i]}</div>`;
+            }
+            return iconsHtml;
+        }
+
+        // 輔助功能：計算日期與星期
         function getDayDetails(startDateStr, dayOffset) {
-            if (!startDateStr) return { dateStr: '____年__月__日', weekStr: '（一）' };
+            if (!startDateStr) return { dateStr: '____年__月__日', weekStr: '（星期一）' };
             const date = new Date(startDateStr);
             date.setDate(date.getDate() + dayOffset);
             
@@ -397,90 +450,131 @@
             };
         }
 
-        // 核心主功能：動態組裝 HTML 手帳內容並觸發列印
+        // 輔助功能：組裝時間軸
+        function generateTimelineHtml(startHour, endHour) {
+            let timelineHtml = '<div style="margin-top: 15px; margin-bottom: 15px;">';
+            for (let h = startHour; h <= endHour; h++) {
+                const hourStr = String(h).padStart(2, '0') + ':00';
+                timelineHtml += `
+                    <div style="display: table; width: 100%; margin-bottom: 12px;">
+                        <div style="display: table-cell; width: 55px; font-weight: bold; font-size: 11pt; color: #555; vertical-align: bottom;">${hourStr}</div>
+                        <div style="display: table-cell; border-bottom: 1px solid #000000; height: 20px;"></div>
+                    </div>
+                `;
+            }
+            timelineHtml += '</div>';
+            return timelineHtml;
+        }
+
+        // 核心主功能：生成 HTML 程式碼並觸發列印
         function generateJournalPDF() {
             const tripName = document.getElementById('trip-name').value || '我的旅行手帳';
             const startDate = document.getElementById('start-date').value;
             const currency = document.getElementById('currency').value || '¥';
             const totalDays = parseInt(document.getElementById('trip-days').value);
+            const hotelCount = parseInt(document.getElementById('hotel-count').value);
             
-            // 計算總頁數
-            const totalPages = 4 + (totalDays * 3) + 3;
-            let currentPageNum = 1;
+            // 總內容頁數 (空白雙數頁不計入總頁數)
+            const totalContentPages = 4 + (totalDays * 3) + 3;
+            let currentContentPage = 1;
             
             let htmlStr = '';
 
-            function addPageFooter() {
-                const footerStr = `<div class="page-number">${currentPageNum} / ${totalPages}</div></div>`;
-                currentPageNum++;
-                return footerStr;
+            // 輔助功能：封裝內容頁面並自動插入空白頁
+            function createFullPage(innerContent) {
+                const cornerIcons = generateCornerIcons();
+                const footers = `
+                    <div class="footer-left">cms.hongkong-travel.journal.generator</div>
+                    <div class="page-number">${currentContentPage} / ${totalContentPages}</div>
+                    <div class="footer-right">${tripName}</div>
+                `;
+                currentContentPage++;
+                
+                // 返回：當前內容頁 + 完全空白的雙數頁
+                return `
+                    <div class="pdf-page">
+                        ${cornerIcons}
+                        ${innerContent}
+                        ${footers}
+                    </div>
+                    <div class="blank-page"></div>
+                `;
             }
 
             /* ==========================================
                第1頁：封面頁
             ========================================== */
-            htmlStr += `<div class="pdf-page">
+            const coverContent = `
                 <div class="cover-container">
                     <div class="cover-title title-large">${tripName}</div>
-                    <div class="cover-box dashed-box">貼相位置</div>
                     <div class="cover-date text-normal">出發日期：${startDate || '____年__月__日'}</div>
-                </div>`;
-            htmlStr += addPageFooter();
+                </div>
+            `;
+            htmlStr += createFullPage(coverContent);
 
             /* ==========================================
                第2頁：航班&酒店檔案
             ========================================== */
-            htmlStr += `<div class="pdf-page">
+            let hotelsListHtml = '';
+            for (let h = 1; h <= hotelCount; h++) {
+                hotelsListHtml += `
+                    <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed #CCCCCC; font-size: 10pt;">
+                        <div style="font-weight: bold; font-size: 11pt; margin-bottom: 3px; color: #2c3e50;">🏨 住宿資料 ${h}</div>
+                        <div style="line-height: 1.6;">
+                            酒店名稱：<span class="ul-line" style="width: 65%;"></span><br>
+                            酒店地址：<span class="ul-line" style="width: 40%;"></span> ／ 電話：<span class="ul-line" style="width: 20%;"></span><br>
+                            包唔包早餐：□ 包 ＆nbsp;＆nbsp; □ 唔包 ＆nbsp;＆nbsp;／＆nbsp; Check-out時間：<span class="ul-line" style="width: 25%;"></span><br>
+                            免費取消期限：<span class="ul-line" style="width: 35%;"></span> ／ 幾多晚：<span class="ul-line" style="width: 15%;"></span><br>
+                            價錢：<span class="ul-line" style="width: 30%;"></span> ／ 免費泊車：□ 有 ＆nbsp;＆nbsp; □ 無<br>
+                            預訂編號：<span class="ul-line" style="width: 65%;"></span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const flightAndHotelContent = `
                 <div class="title-main" style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px;">Flight & Hotel 檔案</div>
-                
-                <div class="layout-table" style="margin-top: 30px;">
-                    <div class="layout-cell" style="width: 48%; padding-right: 4%;">
-                        <div class="title-sub" style="margin-top:0;">✈️ 航班資料</div>
-                        <p class="text-normal">航班編號：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">出發時間：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">到達時間：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">客運大樓：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">座位編號：<span class="ul-line" style="width:70%;"></span></p>
+                <div class="layout-table" style="margin-top: 15px;">
+                    <div class="layout-cell" style="width: 48%; padding-right: 3%;">
+                        <div class="title-sub" style="margin-top:0;">✈️ 出發航班</div>
+                        <div style="line-height: 1.7; font-size: 10.5pt;">
+                            航班編號：<span class="ul-line" style="width:65%;"></span><br>
+                            出發時間：<span class="ul-line" style="width:65%;"></span><br>
+                            到達時間：<span class="ul-line" style="width:65%;"></span><br>
+                            Terminal：<span class="ul-line" style="width:65%;"></span><br>
+                            座位：  <span class="ul-line" style="width:65%;"></span><br>
+                            機票價錢：<span class="ul-line" style="width:65%;"></span>
+                        </div>
                         
-                        <div class="title-sub" style="margin-top: 40px;">✈️ 回程航班</div>
-                        <p class="text-normal">航班編號：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">出發時間：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">到達時間：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">客運大樓：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">座位編號：<span class="ul-line" style="width:70%;"></span></p>
+                        <div class="title-sub" style="margin-top: 25px;">✈️ 回程航班</div>
+                        <div style="line-height: 1.7; font-size: 10.5pt;">
+                            航班編號：<span class="ul-line" style="width:65%;"></span><br>
+                            出發時間：<span class="ul-line" style="width:65%;"></span><br>
+                            到達時間：<span class="ul-line" style="width:65%;"></span><br>
+                            Terminal：<span class="ul-line" style="width:65%;"></span><br>
+                            座位：  <span class="ul-line" style="width:65%;"></span><br>
+                            機票價錢：<span class="ul-line" style="width:65%;"></span>
+                        </div>
                     </div>
                     
-                    <div class="layout-cell" style="width: 48%; border-left: 1px dashed #CCCCCC; padding-left: 4%;">
-                        <div class="title-sub" style="margin-top:0;">🏨 住宿登記入住</div>
-                        <p class="text-normal">酒店名稱：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">酒店地址：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">聯絡電話：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">Check-in ：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">預訂編號：<span class="ul-line" style="width:70%;"></span></p>
-                        
-                        <div class="title-sub" style="margin-top: 40px;">🏨 備用住宿/第二間</div>
-                        <p class="text-normal">酒店名稱：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">酒店地址：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">聯絡電話：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">Check-in ：<span class="ul-line" style="width:70%;"></span></p>
-                        <p class="text-normal">預訂編號：<span class="ul-line" style="width:70%;"></span></p>
+                    <div class="layout-cell" style="width: 52%; border-left: 1px dashed #CCCCCC; padding-left: 4%; max-height: 230mm; overflow: hidden;">
+                        ${hotelsListHtml}
                     </div>
-                </div>`;
-            htmlStr += addPageFooter();
+                </div>
+            `;
+            htmlStr += createFullPage(flightAndHotelContent);
 
             /* ==========================================
                第3頁：緊急聯絡&保險
             ========================================== */
-            htmlStr += `<div class="pdf-page">
+            const emergencyContent = `
                 <div class="title-main" style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px;">緊急聯絡 & 保險檔案</div>
-                
                 <div style="margin-top: 20px;">
                     <div class="title-sub">🚨 當地求助及保險資訊</div>
                     <p class="text-normal">當地緊急求助電話：<span class="ul-line" style="width:60%;"></span></p>
                     <p class="text-normal">旅遊保險緊急熱線：<span class="ul-line" style="width:60%;"></span></p>
                     <p class="text-normal">保險保單編號：  <span class="ul-line" style="width:60%;"></span></p>
                 </div>
-                
                 <div style="margin-top: 40px;">
                     <div class="title-sub">👥 緊急通知聯絡人 (親友/同行人)</div>
                     <table class="data-table">
@@ -496,23 +590,26 @@
                         </tr>
                     </table>
                 </div>
-                
-                <div style="margin-top: 50px; padding: 20px; background-color: #fafafa; border: 1px solid #eee; border-radius: 6px;">
-                    <div class="title-sub" style="margin-top:0;">💡 出行前小提示欄</div>
-                    <p class="text-normal" style="color: #666; font-size: 11pt;">
-                        1. 影印護照及身份證副本分開擺放。<br>
-                        2. 開通海外提款及信用卡海外簽賬功能。<br>
-                        3. 下載當地離線地圖與翻譯軟件。
-                    </p>
-                </div>`;
-            htmlStr += addPageFooter();
+            `;
+            htmlStr += createFullPage(emergencyContent);
 
             /* ==========================================
                第4頁：總行程一覽
             ========================================== */
-            htmlStr += `<div class="pdf-page">
+            let overviewRows = '';
+            for (let i = 1; i <= totalDays; i++) {
+                const dayDetails = getDayDetails(startDate, i - 1);
+                const cityVal = document.getElementById(`city-day-${i}`).value || '自由行';
+                overviewRows += `
+                    <tr>
+                        <td><strong>Day ${i}</strong><br><span style="font-size:10pt; color:#555;">${dayDetails.dateStr}</span></td>
+                        <td>${cityVal}</td>
+                        <td><span class="ul-line" style="width:95%;"></span></td>
+                    </tr>
+                `;
+            }
+            const overviewContent = `
                 <div class="title-main" style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px;">總行程一覽 Overview</div>
-                
                 <table class="data-table" style="margin-top: 20px;">
                     <thead>
                         <tr>
@@ -521,71 +618,64 @@
                             <th style="width: 35%;">今晚住邊間酒店</th>
                         </tr>
                     </thead>
-                    <tbody>`;
-            
-            for (let i = 1; i <= totalDays; i++) {
-                const dayDetails = getDayDetails(startDate, i - 1);
-                const cityVal = document.getElementById(`city-day-${i}`).value || '自由行';
-                htmlStr += `<tr>
-                    <td><strong>Day ${i}</strong><br><span style="font-size:10pt; color:#555;">${dayDetails.dateStr} ${dayDetails.weekStr}</span></td>
-                    <td>${cityVal}</td>
-                    <td><span class="ul-line" style="width:95%;"></span></td>
-                </tr>`;
-            }
-            
-            htmlStr += `  </tbody>
-                </table>`;
-            htmlStr += addPageFooter();
+                    <tbody>
+                        ${overviewRows}
+                    </tbody>
+                </table>
+            `;
+            htmlStr += createFullPage(overviewContent);
 
             /* ==========================================
-               每日行程頁（每日3頁，自動重複生成）
+               每日行程頁（每日3頁，自動重複）
             ========================================== */
             for (let i = 1; i <= totalDays; i++) {
                 const dayDetails = getDayDetails(startDate, i - 1);
                 const cityVal = document.getElementById(`city-day-${i}`).value || '自由行';
 
                 // ▶ 每日第1頁（早上頁）
-                htmlStr += `<div class="pdf-page">
+                const morningTimeline = generateTimelineHtml(6, 12);
+                const morningContent = `
                     <div class="layout-table" style="border-bottom: 2px solid #333; padding-bottom: 10px;">
                         <div class="layout-cell" style="vertical-align: middle;">
-                            <div class="title-main" style="margin:0;">Day ${i} ｜ ${cityVal}</div>
-                            <div class="text-normal" style="color:#555; margin-top:5px;">${dayDetails.dateStr} ${dayDetails.weekStr}</div>
+                            <div class="title-main" style="margin:0; line-height:1.4;">Day ${i} ｜ ${cityVal} ｜ ${dayDetails.dateStr}<br>${dayDetails.weekStr}</div>
                         </div>
-                        <div class="layout-cell header-right-meta" style="width: 200px; vertical-align: middle;">
-                            <div class="weather-icons">☀️ ☁️ 🌧️ ❄️ 🌀</div><br>
-                            起床 ⏰ <span class="ul-line" style="min-width:45px;"></span> : <span class="ul-line" style="min-width:45px;"></span><br>
-                            出門 🚶 <span class="ul-line" style="min-width:45px;"></span> : <span class="ul-line" style="min-width:45px;"></span>
+                        <div class="layout-cell header-right-meta" style="width: 180px; vertical-align: middle;">
+                            <div class="weather-icons">☀️☁️🌧️</div><br>
+                            起床：<span class="ul-line" style="min-width:40px;"></span>:<span class="ul-line" style="min-width:40px;"></span><br>
+                            出門：<span class="ul-line" style="min-width:40px;"></span>:<span class="ul-line" style="min-width:40px;"></span>
                         </div>
                     </div>
                     
-                    <div class="title-sub" style="margin-top: 30px;">🌅 今日朝早行程</div>
-                    <div class="line-block"></div>
-                    <div class="line-block"></div>
-                    <div class="line-block"></div>
-                    <div class="line-block"></div>
-                    <div class="line-block"></div>
+                    <div class="title-sub" style="margin-top: 20px;">🌅 今日朝早行程</div>
+                    ${morningTimeline}
                     
-                    <div class="title-sub" style="margin-top: 40px;">🍳 早餐食咩</div>
-                    <div class="line-block"></div>
-                    <div class="line-block"></div>
-                    <div class="line-block"></div>
-                    
-                    <div class="dashed-box" style="width: 60mm; height: 60mm; line-height: 60mm; position: absolute; bottom: 25mm; right: 15mm;">
-                        貼相位（上午）
-                    </div>`;
-                htmlStr += addPageFooter();
+                    <div class="title-sub" style="margin-top: 25px;">🍳 早餐食咩</div>
+                    <table class="data-table" style="margin-top: 10px;">
+                        <thead>
+                            <tr>
+                                <th style="width: 45%;">食物名稱</th>
+                                <th style="width: 20%;">價錢</th>
+                                <th style="width: 35%;">備註</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td style="height:35px;"></td><td></td><td></td></tr>
+                            <tr><td style="height:35px;"></td><td></td><td></td></tr>
+                        </tbody>
+                    </table>
+                `;
+                htmlStr += createFullPage(morningContent);
 
                 // ▶ 每日第2頁（中午至下午頁）
-                htmlStr += `<div class="pdf-page">
+                const afternoonTimeline = generateTimelineHtml(12, 18);
+                const afternoonContent = `
                     <div class="title-main" style="border-bottom: 1px solid #888; padding-bottom: 5px;">Day ${i} ｜ 中午至下午行程</div>
                     
                     <div class="title-sub">☀️ 下午行程重點</div>
-                    <div class="line-block"></div>
-                    <div class="line-block"></div>
-                    <div class="line-block"></div>
+                    ${afternoonTimeline}
                     
-                    <div class="layout-table" style="margin-top: 30px;">
-                        <div class="layout-cell" style="width: 58%; padding-right: 4%;">
+                    <div class="layout-table" style="margin-top: 20px;">
+                        <div class="layout-cell" style="width: 55%; padding-right: 3%;">
                             <div class="title-sub" style="margin-top:0;">🍱 午餐記錄</div>
                             <p class="text-normal">餐廳名稱：<span class="ul-line" style="width:65%;"></span></p>
                             <p class="text-normal">餐廳地址：<span class="ul-line" style="width:65%;"></span></p>
@@ -593,8 +683,7 @@
                             <p class="text-normal">滋味評語：<span class="ul-line" style="width:65%;"></span></p>
                             <p class="text-normal">預算價錢：<span class="ul-line" style="width:65%;"></span></p>
                         </div>
-                        
-                        <div class="layout-cell" style="width: 38%; border-left: 1px dashed #CCCCCC; padding-left: 4%;">
+                        <div class="layout-cell" style="width: 45%; border-left: 1px dashed #CCCCCC; padding-left: 4%;">
                             <div class="title-sub" style="margin-top:0;">🍢 街頭小食點列</div>
                             <p class="text-normal">▪️ <span class="ul-line" style="width:80%;"></span></p>
                             <p class="text-normal">▪️ <span class="ul-line" style="width:80%;"></span></p>
@@ -604,100 +693,99 @@
                         </div>
                     </div>
                     
-                    <div class="layout-table" style="position: absolute; bottom: 25mm; left: 15mm; right: 15mm;">
-                        <div class="layout-cell" style="width: 55%;">
-                            <div class="title-sub" style="margin-top: 0;">🛍️ 戰利品 / 買咗啲咩</div>
-                            <div class="line-block" style="height: 28px;"></div>
-                            <div class="line-block" style="height: 28px;"></div>
-                            <div class="line-block" style="height: 28px;"></div>
-                            <div class="line-block" style="height: 28px;"></div>
-                        </div>
-                        <div class="layout-cell" style="width: 45%; padding-left: 5mm; vertical-align: bottom;">
-                            <div class="dashed-box" style="width: 80mm; height: 60mm; line-height: 60mm; margin-left: auto;">
-                                貼相位（下午）
-                            </div>
-                        </div>
-                    </div>`;
-                htmlStr += addPageFooter();
+                    <div class="title-sub" style="margin-top: 20px;">🛍️ 戰利品</div>
+                    <table class="data-table" style="margin-top: 10px;">
+                        <thead>
+                            <tr>
+                                <th style="width: 45%;">物品名稱</th>
+                                <th style="width: 20%;">價錢</th>
+                                <th style="width: 35%;">購買地點</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td style="height:32px;"></td><td></td><td></td></tr>
+                            <tr><td style="height:32px;"></td><td></td><td></td></tr>
+                            <tr><td style="height:32px;"></td><td></td><td></td></tr>
+                        </tbody>
+                    </table>
+                `;
+                htmlStr += createFullPage(afternoonContent);
 
-                // ▶ 每日第3頁（晚上頁）
-                htmlStr += `<div class="pdf-page">
-                    <div class="title-main" style="border-bottom: 1px solid #888; padding-bottom: 5px;">Day ${i} ｜ 晚間與全日總結</div>
+                // ▶ 每日第3頁（晚上行程頁）
+                const eveningTimeline = generateTimelineHtml(18, 23);
+                const eveningContent = `
+                    <div class="title-main" style="border-bottom: 1px solid #888; padding-bottom: 5px;">Day ${i} ｜ 晚上行程頁</div>
+                    
+                    <div class="title-sub" style="margin-top: 15px;">🌙 晚上行程重點</div>
+                    ${eveningTimeline}
                     
                     <div class="title-sub">🌙 晚餐記錄</div>
                     <p class="text-normal">餐廳名稱：<span class="ul-line" style="width:75%;"></span></p>
                     <p class="text-normal">食咗啲咩：<span class="ul-line" style="width:75%;"></span></p>
                     <p class="text-normal">特別體驗：<span class="ul-line" style="width:75%;"></span></p>
                     
-                    <div class="title-sub" style="margin-top: 35px;">💰 全日支出總結 (${currency})</div>
-                    <table class="data-table" style="text-align: center;">
+                    <div class="title-sub" style="margin-top: 30px;">💰 全日支出總結 (${currency})</div>
+                    <table class="data-table" style="text-align: center; margin-top: 10px;">
                         <thead>
                             <tr>
-                                <th style="text-align:center; font-size:12pt; padding:8px;">交通</th>
-                                <th style="text-align:center; font-size:12pt; padding:8px;">飲食</th>
-                                <th style="text-align:center; font-size:12pt; padding:8px;">購物</th>
-                                <th style="text-align:center; font-size:12pt; padding:8px;">雜項</th>
-                                <th style="text-align:center; font-size:12pt; padding:8px; background-color:#eaeaea;">合計</th>
+                                <th style="text-align:center; padding:8px;">交通</th>
+                                <th style="text-align:center; padding:8px;">飲食</th>
+                                <th style="text-align:center; padding:8px;">購物</th>
+                                <th style="text-align:center; padding:8px;">雜項</th>
+                                <th style="text-align:center; padding:8px; background-color:#eaeaea;">合計</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td style="height:45px;">${currency} <span class="ul-line" style="min-width:50px;"></span></td>
-                                <td style="height:45px;">${currency} <span class="ul-line" style="min-width:50px;"></span></td>
-                                <td style="height:45px;">${currency} <span class="ul-line" style="min-width:50px;"></span></td>
-                                <td style="height:45px;">${currency} <span class="ul-line" style="min-width:50px;"></span></td>
-                                <td style="height:45px; background-color:#fafafa;"><strong>${currency}</strong> <span class="ul-line" style="min-width:50px;"></span></td>
+                                <td style="height:40px;">${currency} <span class="ul-line" style="min-width:50px;"></span></td>
+                                <td style="height:40px;">${currency} <span class="ul-line" style="min-width:50px;"></span></td>
+                                <td style="height:40px;">${currency} <span class="ul-line" style="min-width:50px;"></span></td>
+                                <td style="height:40px;">${currency} <span class="ul-line" style="min-width:50px;"></span></td>
+                                <td style="height:40px; background-color:#fafafa;"><strong>${currency}</strong> <span class="ul-line" style="min-width:50px;"></span></td>
                             </tr>
                         </tbody>
                     </table>
-                    
-                    <div class="title-sub" style="margin-top: 35px;">❤️ 今日最開心的一件事</div>
-                    <div class="line-block"></div>
-                    <div class="line-block"></div>
-                    <div class="line-block"></div>
-                    
-                    <div class="dashed-box" style="width: 100%; height: 80mm; position: absolute; bottom: 25mm; left: 15mm; right: 15mm; text-align: left; padding: 10px;">
-                        <span class="text-muted" style="font-size:11pt; color:#aaa;">Stamp & Ticket Area</span>
-                    </div>`;
-                htmlStr += addPageFooter();
+                `;
+                htmlStr += createFullPage(eveningContent);
             }
 
             /* ==========================================
                倒數第3頁：單據收納頁
             ========================================== */
-            htmlStr += `<div class="pdf-page">
+            const receiptsContent = `
                 <div class="title-main" style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px;">單據收納頁 Receipts Collection</div>
-                
                 <table class="data-table" style="height: 230mm; margin-top: 20px; border: none;">
                     <tr style="border: none;">
-                        <td class="dashed-box" style="width:50%; height: 75mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
-                        <td class="dashed-box" style="width:50%; height: 75mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
+                        <td class="dashed-box" style="width:50%; height: 72mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
+                        <td class="dashed-box" style="width:50%; height: 72mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
                     </tr>
                     <tr style="border: none;">
-                        <td class="dashed-box" style="height: 75mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
-                        <td class="dashed-box" style="height: 75mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
+                        <td class="dashed-box" style="height: 72mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
+                        <td class="dashed-box" style="height: 72mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
                     </tr>
                     <tr style="border: none;">
-                        <td class="dashed-box" style="height: 75mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
-                        <td class="dashed-box" style="height: 75mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
+                        <td class="dashed-box" style="height: 72mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
+                        <td class="dashed-box" style="height: 72mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
                     </tr>
-                </table>`;
-            htmlStr += addPageFooter();
+                </table>
+            `;
+            htmlStr += createFullPage(receiptsContent);
 
             /* ==========================================
                倒數第2頁：地圖／單張貼貼頁
             ========================================== */
-            htmlStr += `<div class="pdf-page">
+            const mapsContent = `
                 <div class="title-main" style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px;">地圖 / 景點單張紀念頁</div>
                 <div class="dashed-box" style="width: 100%; height: 235mm; margin-top: 15px; text-align: left; padding: 15px;">
                     <span class="text-muted">Free Space</span>
-                </div>`;
-            htmlStr += addPageFooter();
+                </div>
+            `;
+            htmlStr += createFullPage(mapsContent);
 
             /* ==========================================
                最後1頁：封底／後記頁
             ========================================== */
-            htmlStr += `<div class="pdf-page">
+            const epilogueContent = `
                 <div class="title-main" style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px;">旅程後記 Epilogue</div>
                 
                 <div style="margin-top: 30px;">
@@ -715,15 +803,16 @@
                 </div>
                 
                 <div style="margin-top: 50px; padding: 25px; border: 2px dashed #999; border-radius: 8px; background-color: #fafafa;">
-                    <div class="title-sub" style="margin-top: 0; font-size:16pt;">💰 項目大總結</div>
-                    <p class="title-large" style="margin: 20px 0 0 0; font-size: 20pt;">總使費： ${currency} <span class="ul-line" style="width: 60%; min-width: 150px; border-bottom-width: 2px;"></span></p>
+                    <p class="title-large" style="margin: 0; font-size: 18pt;">總使費： ${currency} <span class="ul-line" style="width: 60%; min-width: 150px; border-bottom-width: 2px;"></span></p>
                 </div>
                 
-                <div style="text-align: center; margin-top: 40mm; font-size: 14pt; color: #7f8c8d; letter-spacing: 2px;">
+                <div style="text-align: center; margin-top: 35mm; font-size: 14pt; color: #7f8c8d; letter-spacing: 2px;">
                     - 多謝使用 · 祝您下次旅程更精彩 -
-                </div>`;
-            htmlStr += addPageFooter();
+                </div>
+            `;
+            htmlStr += createFullPage(epilogueContent);
 
+            // 注入並觸發列印
             document.getElementById('print-area').innerHTML = htmlStr;
             window.print();
         }

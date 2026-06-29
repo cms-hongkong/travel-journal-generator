@@ -314,20 +314,11 @@
                 height: 22px;
             }
 
-            /* 天氣與頂部狀態 */
+            /* 頁頂狀態欄 */
             .header-meta-right {
                 text-align: right;
                 font-size: 11.5pt;
                 line-height: 1.6;
-            }
-            .weather-group-box {
-                font-size: 12pt;
-                letter-spacing: 6px;
-                border: 1px dashed #CCCCCC;
-                padding: 2px 6px;
-                border-radius: 4px;
-                display: inline-block;
-                margin-bottom: 4px;
             }
         }
     </style>
@@ -449,13 +440,12 @@
             };
         }
 
-        // 建立時間軸結構
+        // 建立時間軸結構 (修改：刪除時間軸最底部的交通項目橫線，最後一個時間點後直接結束)
         function makeTimeline(start, end) {
             let html = '<div class="timeline-box">';
             for(let h = start; h <= end; h++) {
                 html += `<div class="timeline-row"><div class="timeline-time">${String(h).padStart(2, '0')}:00</div><div class="timeline-fill-line"></div></div>`;
             }
-            html += `<div class="timeline-row" style="margin-top:12px;"><div class="timeline-time" style="width:45px;">交通：</div><div class="timeline-fill-line"></div></div>`;
             html += '</div>';
             return html;
         }
@@ -482,13 +472,13 @@
             const hotelCount = parseInt(document.getElementById('hotel-count').value);
 
             // 計算精確總面數 (依據規則：空白頁也要分配連續編號的頁碼)
-            const coverPages = 1; // 封面頁
+            const coverPages = 1; 
             const flightPages = 1;
             const hotelPages = Math.ceil(hotelCount / 2);
             const overviewPages = Math.ceil(tripDays / 14);
-            const diaryPages = tripDays * 3 * 2; // 早午晚 (3頁內容 + 3頁空白) = 每日6頁
+            const diaryPages = tripDays * 3 * 2; 
             const expensePages = Math.ceil(tripDays / 15);
-            const postPages = 2; // 單據、地圖
+            const postPages = 2; 
             
             const totalNumberedPages = (coverPages + flightPages + hotelPages + overviewPages + diaryPages + expensePages + postPages) - 1;
 
@@ -637,19 +627,20 @@
 
             /* ==========================================
                每日行程頁 (包含空白頁交叉插入)
-            ========================================== */
+            ========================================= */
             for (let i = 1; i <= tripDays; i++) {
                 const dayObj = getOffsetDateFullStr(startDate, i - 1);
                 const cityVal = document.getElementById(`city-day-${i}`).value || '自由行';
-                const headerTitle = `Day ${i} ｜ ${cityVal} ｜ ${dayObj.date}（${dayObj.week}）`;
+                
+                // 修改：天氣圖示搬去同頁頂標題同一行右側（日期隔離）
+                const headerTitle = `Day ${i} ｜ ${cityVal} ｜ ${dayObj.date}（${dayObj.week}） ☀️ ☁️ 🌧️`;
 
-                // ▶ 每日第1頁（早上頁：06:00 - 12:00 -> 買咗咩優化減至 8 行避免遮擋頁碼）
+                // ▶ 每日第1頁（早上頁：買咗咩減至 8 行避免遮擋頁碼，修改：起床/出門擺同一行右上角）
                 const morningHtml = `
                     <div class="layout-table" style="border-bottom: 2px solid #333333; padding-bottom: 6px; margin-bottom: 12px;">
                         <div class="layout-cell" style="vertical-align: bottom;"><div class="title-main" style="font-size:15pt;">${headerTitle}</div></div>
-                        <div class="layout-cell header-meta-right" style="width: 220px;">
-                            <div class="weather-group-box">☀️ ☁️ 🌧️</div>
-                            <span style="font-size:10.5pt; margin-left:8px;">起床：__:__ ＆nbsp; 出門：__:__</span>
+                        <div class="layout-cell header-meta-right" style="width: 220px; vertical-align: bottom; text-align: right;">
+                            <span style="font-size:10.5pt; font-weight: bold;">起床：__:__   出門：__:__</span>
                         </div>
                     </div>
                     <div class="title-sub" style="margin-top: 5px; font-size: 11pt;">🌅 朝早行程時間軸 (06:00 - 12:00)</div>
@@ -661,11 +652,11 @@
                 `;
                 outputHTML += printContentPage(morningHtml, true);
 
-                // ▶ 每日第2頁（中午至下午頁：12:00 - 18:00 -> 保持 9 行）
+                // ▶ 每日第2頁（中午至下午頁：12:00 - 18:00）
                 const afternoonHtml = `
                     <div class="layout-table" style="border-bottom: 2px solid #333333; padding-bottom: 6px; margin-bottom: 12px;">
                         <div class="layout-cell" style="vertical-align: bottom;"><div class="title-main" style="font-size:15pt;">${headerTitle}</div></div>
-                        <div class="layout-cell header-meta-right" style="width: 100px;"><div class="weather-group-box">☀️ ☁️ 🌧️</div></div>
+                        <div class="layout-cell" style="width: 10px;"></div>
                     </div>
                     <div class="title-sub" style="margin-top: 5px; font-size: 11pt;">☀️ 下午行程時間軸 (12:00 - 18:00)</div>
                     ${makeTimeline(12, 18)}
@@ -676,11 +667,11 @@
                 `;
                 outputHTML += printContentPage(afternoonHtml, true);
 
-                // ▶ 每日第3頁（晚上頁：18:00 - 23:00 -> 保持 9 行）
+                // ▶ 每日第3頁（晚上頁：18:00 - 23:00）
                 const eveningHtml = `
                     <div class="layout-table" style="border-bottom: 2px solid #333333; padding-bottom: 6px; margin-bottom: 12px;">
                         <div class="layout-cell" style="vertical-align: bottom;"><div class="title-main" style="font-size:15pt;">${headerTitle}</div></div>
-                        <div class="layout-cell header-meta-right" style="width: 100px;"><div class="weather-group-box">☀️ ☁️ 🌧️</div></div>
+                        <div class="layout-cell" style="width: 10px;"></div>
                     </div>
                     <div class="title-sub" style="margin-top: 5px; font-size: 11pt;">🌙 晚上行程時間軸 (18:00 - 23:00)</div>
                     ${makeTimeline(18, 23)}
@@ -693,7 +684,7 @@
             }
 
             /* ==========================================
-               全日支出總結頁 (日期改為全自動計算生成，每15天自動分頁)
+               全日支出總結頁 (日期全自動計算生成，每15天自動分頁)
             ========================================== */
             for (let e = 0; e < expensePages; e++) {
                 let expRows = '';
@@ -750,3 +741,9 @@
     </script>
 </body>
 </html>
+"""
+
+with open("travel_journal_pdf_generator_v2.html", "w", encoding="utf-8") as f:
+    f.write(html_content)
+print("Updated V2 file successfully compiled via interpreter.")
+}

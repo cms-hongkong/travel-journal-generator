@@ -511,7 +511,6 @@
                     <div class="page-number">${displayedIndex} / ${totalNumberedPages}</div>
                     <div class="footer-right">${tripName}</div>
                 `;
-                currentPageIndexForBlank = displayedIndex; 
                 currentPageNum++;
 
                 let pageMarkup = `<div class="pdf-page">${decors}${innerMarkup}${footers}</div>`;
@@ -644,7 +643,7 @@
                 const cityVal = document.getElementById(`city-day-${i}`).value || '自由行';
                 const headerTitle = `Day ${i} ｜ ${cityVal} ｜ ${dayObj.date}（${dayObj.week}）`;
 
-                // ▶ 每日第1頁（早上頁：06:00 - 12:00）
+                // ▶ 每日第1頁（早上頁：06:00 - 12:00 -> 買咗咩優化減至 8 行避免遮擋頁碼）
                 const morningHtml = `
                     <div class="layout-table" style="border-bottom: 2px solid #333333; padding-bottom: 6px; margin-bottom: 12px;">
                         <div class="layout-cell" style="vertical-align: bottom;"><div class="title-main" style="font-size:15pt;">${headerTitle}</div></div>
@@ -658,11 +657,11 @@
                     <div class="title-sub" style="font-size: 11pt;">🍳 食咗咩</div>
                     ${makeHandwriteTable("食物名稱", "價錢", "備註／餐廳名", 6)}
                     <div class="title-sub" style="font-size: 11pt;">🛍️ 買咗咩</div>
-                    ${makeHandwriteTable("物品名稱", "價錢", "購買地點", 9)}
+                    ${makeHandwriteTable("物品名稱", "價錢", "購買地點", 8)}
                 `;
                 outputHTML += printContentPage(morningHtml, true);
 
-                // ▶ 每日第2頁（中午至下午頁：12:00 - 18:00）
+                // ▶ 每日第2頁（中午至下午頁：12:00 - 18:00 -> 保持 9 行）
                 const afternoonHtml = `
                     <div class="layout-table" style="border-bottom: 2px solid #333333; padding-bottom: 6px; margin-bottom: 12px;">
                         <div class="layout-cell" style="vertical-align: bottom;"><div class="title-main" style="font-size:15pt;">${headerTitle}</div></div>
@@ -677,7 +676,7 @@
                 `;
                 outputHTML += printContentPage(afternoonHtml, true);
 
-                // ▶ 每日第3頁（晚上頁：18:00 - 23:00）
+                // ▶ 每日第3頁（晚上頁：18:00 - 23:00 -> 保持 9 行）
                 const eveningHtml = `
                     <div class="layout-table" style="border-bottom: 2px solid #333333; padding-bottom: 6px; margin-bottom: 12px;">
                         <div class="layout-cell" style="vertical-align: bottom;"><div class="title-main" style="font-size:15pt;">${headerTitle}</div></div>
@@ -694,7 +693,7 @@
             }
 
             /* ==========================================
-               全日支出總結頁 (每15天自動分頁)
+               全日支出總結頁 (日期改為全自動計算生成，每15天自動分頁)
             ========================================== */
             for (let e = 0; e < expensePages; e++) {
                 let expRows = '';
@@ -705,7 +704,7 @@
                     const dayObj = getOffsetDateFullStr(startDate, i - 1);
                     expRows += `
                         <tr>
-                            <td style="height: 38px; font-weight: bold; text-align: center;">Day ${i}<br><span style="font-size:9pt; font-weight:normal; color:#555;">${dayObj.date}（${dayObj.week}）</span></td>
+                            <td style="height: 38px; font-weight: bold; text-align: center; font-size: 10pt;">Day ${i}<br>${dayObj.date}（${dayObj.week}）</td>
                             <td></td><td></td><td></td><td></td><td></td>
                         </tr>
                     `;

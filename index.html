@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅行手帳PDF生成器</title>
+    <style>
+        /* 全域樣式設定 */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft JhengHei', 'PingFang SC', 'Segoe UI', sans-serif;
+            background-color: #f4f6f9;
+            color: #333333;
+        }
+
+        /* 網頁操作界面樣式 */
+        .admin-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 24pt;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #34495e;
+        }
+
+        input[type="text"], input[type="date"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 11pt;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .slider-container {
+            display: table;
+            width: 100%;
+        }
+
+        .slider-cell {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        input[type="range"] {
+            width: 85%;
+            margin-right: 15px;
+        }
+
+        #days-val {
+            font-weight: bold;
+            color: #3498db;
+            font-size: 12pt;
+        }
+
+        .city-inputs-title {
+            margin-top: 25px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        .city-grid {
+            margin-top: 15px;
+        }
+
+        .city-item {
+            margin-bottom: 12px;
+            display: table;
+            width: 100%;
+        }
+
+        .city-label {
+            display: table-cell;
+            width: 90px;
+            font-weight: bold;
+            vertical-align: middle;
+            color: #7f8c8d;
+        }
+
+        .city-input-cell {
+            display: table-cell;
+        }
+
+        .btn-submit {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: #2ecc71;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14pt;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-submit:hover {
+            background-color: #27ae60;
+        }
+
+        /* PDF 預覽與列印容器 */
+        #print-area {
+            display: none;
+        }
+
+        /* ------------------------------------------
+           PDF 列印專用樣式規格 (A4 直向)
+        ------------------------------------------ */
+        @media print {
+            .admin-container {
+                display: none !important;
+            }
+
+            #print-area {
+                display: block !important;
+            }
+
+            body {
+                background-color: #ffffff;
+            }
+
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+
+            .pdf-page {
+                width: 210mm;
+                height: 296.8mm; /* 預留些微邊距防止分頁溢出 */
+                page-break-after: always;
+                position: relative;
+                background-color: #ffffff;
+                padding: 20mm 15mm;
+                overflow: hidden;
+                box-sizing: border-box;
+            }
+
+            .pdf-page:last-child {
+                page-break-after: avoid;
+            }
+
+            /* 通用手寫橫線樣式 */
+            .ul-line {
+                border-bottom: 1px solid #000000;
+                display: inline-block;
+                min-width: 100px;
+                height: 22px;
+                vertical-align: bottom;
+                margin-bottom: 2px;
+            }
+
+            .line-block {
+                border-bottom: 1px solid #000000;
+                height: 32px;
+                margin-top: 5px;
+            }
+
+            /* 通用虛線框 */
+            .dashed-box {
+                border: 1px dashed #CCCCCC;
+                border-radius: 4px;
+                color: #888888;
+                font-size: 12pt;
+                text-align: center;
+                background-color: #fafafa;
+            }
+
+            /* 頁碼樣式 */
+            .page-number {
+                position: absolute;
+                bottom: 12mm;
+                left: 0;
+                right: 0;
+                text-align: center;
+                font-size: 10pt;
+                color: #888888;
+            }
+
+            /* 通用排版表格 (取代 flex/grid 確保不掉頁) */
+            .layout-table {
+                display: table;
+                width: 100%;
+                table-layout: fixed;
+            }
+
+            .layout-cell {
+                display: table-cell;
+                vertical-align: top;
+            }
+
+            /* 標準表格樣式 */
+            .data-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 15px;
+            }
+
+            .data-table th, .data-table td {
+                border: 1px solid #CCCCCC;
+                padding: 10px;
+                text-align: left;
+                vertical-align: middle;
+                font-size: 12pt;
+            }
+
+            .data-table th {
+                background-color: #f9f9f9;
+                font-weight: bold;
+                font-size: 14pt;
+            }
+
+            /* 字體規格 */
+            .title-large { font-size: 28pt; font-weight: bold; }
+            .title-main { font-size: 16pt; font-weight: bold; margin-bottom: 15px; }
+            .title-sub { font-size: 14pt; font-weight: bold; margin-top: 20px; margin-bottom: 10px; color: #111111; }
+            .text-normal { font-size: 12pt; line-height: 1.8; }
+            .text-muted { font-size: 12pt; color: #888888; }
+
+            /* 封面專用頁面樣式 */
+            .cover-container {
+                text-align: center;
+                height: 100%;
+                position: relative;
+            }
+            .cover-title {
+                margin-top: 40mm;
+                padding: 0 10mm;
+                line-height: 1.4;
+            }
+            .cover-box {
+                width: 100mm;
+                height: 100mm;
+                line-height: 100mm;
+                margin: 30mm auto 0 auto;
+            }
+            .cover-date {
+                position: absolute;
+                bottom: 15mm;
+                right: 5mm;
+                font-size: 12pt;
+            }
+
+            /* 天氣與時間區塊 */
+            .header-right-meta {
+                text-align: right;
+                font-size: 12pt;
+                line-height: 1.6;
+            }
+            .weather-icons {
+                font-size: 14pt;
+                letter-spacing: 5px;
+                border: 1px dashed #CCCCCC;
+                padding: 2px 6px;
+                border-radius: 4px;
+                display: inline-block;
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-container">
+        <h1>✈️ 旅行手帳 PDF 生成器</h1>
+        
+        <div class="form-group">
+            <label for="trip-name">旅程名稱</label>
+            <input type="text" id="trip-name" placeholder="例如：2026 東京初夏之旅 / 曼谷浪漫遊" value="2026 我的完美旅程">
+        </div>
+
+        <div class="form-group">
+            <label for="start-date">出發日期</label>
+            <input type="date" id="start-date">
+        </div>
+
+        <div class="form-group">
+            <label for="currency">貨幣符號</label>
+            <input type="text" id="currency" placeholder="例如：¥ / ฿ / € / $" value="¥">
+        </div>
+
+        <div class="form-group">
+            <label for="trip-days">旅行日數 (1 - 30 日)</label>
+            <div class="slider-container">
+                <div class="slider-cell">
+                    <input type="range" id="trip-days" min="1" max="30" value="5" oninput="updateDaysValue(this.value)">
+                </div>
+                <div class="slider-cell" style="width: 50px; text-align: right;">
+                    <span id="days-val">5</span>日
+                </div>
+            </div>
+        </div>
+
+        <div class="city-inputs-title">每日主打城市／地區</div>
+        <div id="city-grid-container" class="city-grid">
+            </div>
+
+        <button type="button" class="btn-submit" onclick="generateJournalPDF()">✨ 生成手帳 PDF</button>
+    </div>
+
+    <div id="print-area"></div>
+
+    <script>
+        // 初始化出發日期為今日
+        document.getElementById('start-date').valueAsDate = new Date();
+
+        // 更新滑塊數值與動態重新生成城市輸入表單
+        function updateDaysValue(val) {
+            document.getElementById('days-val').innerText = val;
+            renderCityInputs(parseInt(val));
+        }
+
+        // 動態渲染每日城市輸入框
+        function renderCityInputs(days) {
+            const container = document.getElementById('city-grid-container');
+            container.innerHTML = '';
+            
+            const defaultCities = ["東京", "河口湖", "箱根", "鐮倉", "橫濱"];
+            
+            for (let i = 1; i <= days; i++) {
+                const defaultVal = defaultCities[(i - 1) % defaultCities.length];
+                
+                const item = document.createElement('div');
+                item.className = 'city-item';
+                
+                const labelCell = document.createElement('div');
+                labelCell.className = 'city-label';
+                labelCell.innerText = `Day ${i} 城市 :`;
+                
+                const inputCell = document.createElement('div');
+                inputCell.className = 'city-input-cell';
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = `city-day-${i}`;
+                input.value = `${defaultVal}`;
+                
+                inputCell.appendChild(input);
+                item.appendChild(labelCell);
+                item.appendChild(inputCell);
+                container.appendChild(item);
+            }
+        }
+
+        // 預先執行一次
+        renderCityInputs(5);
+
+        // 根據出發日期與天數計算日期與星期幾
+        function getDayDetails(startDateStr, dayOffset) {
+            if (!startDateStr) return { dateStr: '____年__月__日', weekStr: '（一）' };
+            const date = new Date(startDateStr);
+            date.setDate(date.getDate() + dayOffset);
+            
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            
+            const weeks = ['日', '一', '二', '三', '四', '五', '六'];
+            const w = weeks[date.getDay()];
+            
+            return {
+                dateStr: `${y}-${m}-${d}`,
+                weekStr: `（星期${w}）`
+            };
+        }
+
+        // 核心主功能：動態組裝 HTML 手帳內容並觸發列印
+        function generateJournalPDF() {
+            const tripName = document.getElementById('trip-name').value || '我的旅行手帳';
+            const startDate = document.getElementById('start-date').value;
+            const currency = document.getElementById('currency').value || '¥';
+            const totalDays = parseInt(document.getElementById('trip-days').value);
+            
+            // 計算總頁數
+            const totalPages = 4 + (totalDays * 3) + 3;
+            let currentPageNum = 1;
+            
+            let htmlStr = '';
+
+            function addPageFooter() {
+                const footerStr = `<div class="page-number">${currentPageNum} / ${totalPages}</div></div>`;
+                currentPageNum++;
+                return footerStr;
+            }
+
+            /* ==========================================
+               第1頁：封面頁
+            ========================================== */
+            htmlStr += `<div class="pdf-page">
+                <div class="cover-container">
+                    <div class="cover-title title-large">${tripName}</div>
+                    <div class="cover-box dashed-box">貼相位置</div>
+                    <div class="cover-date text-normal">出發日期：${startDate || '____年__月__日'}</div>
+                </div>`;
+            htmlStr += addPageFooter();
+
+            /* ==========================================
+               第2頁：航班&酒店檔案
+            ========================================== */
+            htmlStr += `<div class="pdf-page">
+                <div class="title-main" style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px;">Flight & Hotel 檔案</div>
+                
+                <div class="layout-table" style="margin-top: 30px;">
+                    <div class="layout-cell" style="width: 48%; padding-right: 4%;">
+                        <div class="title-sub" style="margin-top:0;">✈️ 航班資料</div>
+                        <p class="text-normal">航班編號：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">出發時間：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">到達時間：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">客運大樓：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">座位編號：<span class="ul-line" style="width:70%;"></span></p>
+                        
+                        <div class="title-sub" style="margin-top: 40px;">✈️ 回程航班</div>
+                        <p class="text-normal">航班編號：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">出發時間：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">到達時間：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">客運大樓：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">座位編號：<span class="ul-line" style="width:70%;"></span></p>
+                    </div>
+                    
+                    <div class="layout-cell" style="width: 48%; border-left: 1px dashed #CCCCCC; padding-left: 4%;">
+                        <div class="title-sub" style="margin-top:0;">🏨 住宿登記入住</div>
+                        <p class="text-normal">酒店名稱：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">酒店地址：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">聯絡電話：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">Check-in ：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">預訂編號：<span class="ul-line" style="width:70%;"></span></p>
+                        
+                        <div class="title-sub" style="margin-top: 40px;">🏨 備用住宿/第二間</div>
+                        <p class="text-normal">酒店名稱：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">酒店地址：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">聯絡電話：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">Check-in ：<span class="ul-line" style="width:70%;"></span></p>
+                        <p class="text-normal">預訂編號：<span class="ul-line" style="width:70%;"></span></p>
+                    </div>
+                </div>`;
+            htmlStr += addPageFooter();
+
+            /* ==========================================
+               第3頁：緊急聯絡&保險
+            ========================================== */
+            htmlStr += `<div class="pdf-page">
+                <div class="title-main" style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px;">緊急聯絡 & 保險檔案</div>
+                
+                <div style="margin-top: 20px;">
+                    <div class="title-sub">🚨 當地求助及保險資訊</div>
+                    <p class="text-normal">當地緊急求助電話：<span class="ul-line" style="width:60%;"></span></p>
+                    <p class="text-normal">旅遊保險緊急熱線：<span class="ul-line" style="width:60%;"></span></p>
+                    <p class="text-normal">保險保單編號：  <span class="ul-line" style="width:60%;"></span></p>
+                </div>
+                
+                <div style="margin-top: 40px;">
+                    <div class="title-sub">👥 緊急通知聯絡人 (親友/同行人)</div>
+                    <table class="data-table">
+                        <tr>
+                            <td>聯絡人：<span class="ul-line" style="width:50%;"></span><br><br>電話：<span class="ul-line" style="width:60%;"></span></td>
+                            <td>聯絡人：<span class="ul-line" style="width:50%;"></span><br><br>電話：<span class="ul-line" style="width:60%;"></span></td>
+                            <td>聯絡人：<span class="ul-line" style="width:50%;"></span><br><br>電話：<span class="ul-line" style="width:60%;"></span></td>
+                        </tr>
+                        <tr>
+                            <td>聯絡人：<span class="ul-line" style="width:50%;"></span><br><br>電話：<span class="ul-line" style="width:60%;"></span></td>
+                            <td>聯絡人：<span class="ul-line" style="width:50%;"></span><br><br>電話：<span class="ul-line" style="width:60%;"></span></td>
+                            <td>聯絡人：<span class="ul-line" style="width:50%;"></span><br><br>電話：<span class="ul-line" style="width:60%;"></span></td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 50px; padding: 20px; background-color: #fafafa; border: 1px solid #eee; border-radius: 6px;">
+                    <div class="title-sub" style="margin-top:0;">💡 出行前小提示欄</div>
+                    <p class="text-normal" style="color: #666; font-size: 11pt;">
+                        1. 影印護照及身份證副本分開擺放。<br>
+                        2. 開通海外提款及信用卡海外簽賬功能。<br>
+                        3. 下載當地離線地圖與翻譯軟件。
+                    </p>
+                </div>`;
+            htmlStr += addPageFooter();
+
+            /* ==========================================
+               第4頁：總行程一覽
+            ========================================== */
+            htmlStr += `<div class="pdf-page">
+                <div class="title-main" style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px;">總行程一覽 Overview</div>
+                
+                <table class="data-table" style="margin-top: 20px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">日期</th>
+                            <th style="width: 40%;">主打城市 / 地區</th>
+                            <th style="width: 35%;">今晚住邊間酒店</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            for (let i = 1; i <= totalDays; i++) {
+                const dayDetails = getDayDetails(startDate, i - 1);
+                const cityVal = document.getElementById(`city-day-${i}`).value || '自由行';
+                htmlStr += `<tr>
+                    <td><strong>Day ${i}</strong><br><span style="font-size:10pt; color:#555;">${dayDetails.dateStr} ${dayDetails.weekStr}</span></td>
+                    <td>${cityVal}</td>
+                    <td><span class="ul-line" style="width:95%;"></span></td>
+                </tr>`;
+            }
+            
+            htmlStr += `  </tbody>
+                </table>`;
+            htmlStr += addPageFooter();
+
+            /* ==========================================
+               每日行程頁（每日3頁，自動重複生成）
+            ========================================== */
+            for (let i = 1; i <= totalDays; i++) {
+                const dayDetails = getDayDetails(startDate, i - 1);
+                const cityVal = document.getElementById(`city-day-${i}`).value || '自由行';
+
+                // ▶ 每日第1頁（早上頁）
+                htmlStr += `<div class="pdf-page">
+                    <div class="layout-table" style="border-bottom: 2px solid #333; padding-bottom: 10px;">
+                        <div class="layout-cell" style="vertical-align: middle;">
+                            <div class="title-main" style="margin:0;">Day ${i} ｜ ${cityVal}</div>
+                            <div class="text-normal" style="color:#555; margin-top:5px;">${dayDetails.dateStr} ${dayDetails.weekStr}</div>
+                        </div>
+                        <div class="layout-cell header-right-meta" style="width: 200px; vertical-align: middle;">
+                            <div class="weather-icons">☀️ ☁️ 🌧️ ❄️ 🌀</div><br>
+                            起床 ⏰ <span class="ul-line" style="min-width:45px;"></span> : <span class="ul-line" style="min-width:45px;"></span><br>
+                            出門 🚶 <span class="ul-line" style="min-width:45px;"></span> : <span class="ul-line" style="min-width:45px;"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="title-sub" style="margin-top: 30px;">🌅 今日朝早行程</div>
+                    <div class="line-block"></div>
+                    <div class="line-block"></div>
+                    <div class="line-block"></div>
+                    <div class="line-block"></div>
+                    <div class="line-block"></div>
+                    
+                    <div class="title-sub" style="margin-top: 40px;">🍳 早餐食咩</div>
+                    <div class="line-block"></div>
+                    <div class="line-block"></div>
+                    <div class="line-block"></div>
+                    
+                    <div class="dashed-box" style="width: 60mm; height: 60mm; line-height: 60mm; position: absolute; bottom: 25mm; right: 15mm;">
+                        貼相位（上午）
+                    </div>`;
+                htmlStr += addPageFooter();
+
+                // ▶ 每日第2頁（中午至下午頁）
+                htmlStr += `<div class="pdf-page">
+                    <div class="title-main" style="border-bottom: 1px solid #888; padding-bottom: 5px;">Day ${i} ｜ 中午至下午行程</div>
+                    
+                    <div class="title-sub">☀️ 下午行程重點</div>
+                    <div class="line-block"></div>
+                    <div class="line-block"></div>
+                    <div class="line-block"></div>
+                    
+                    <div class="layout-table" style="margin-top: 30px;">
+                        <div class="layout-cell" style="width: 58%; padding-right: 4%;">
+                            <div class="title-sub" style="margin-top:0;">🍱 午餐記錄</div>
+                            <p class="text-normal">餐廳名稱：<span class="ul-line" style="width:65%;"></span></p>
+                            <p class="text-normal">餐廳地址：<span class="ul-line" style="width:65%;"></span></p>
+                            <p class="text-normal">必食菜式：<span class="ul-line" style="width:65%;"></span></p>
+                            <p class="text-normal">滋味評語：<span class="ul-line" style="width:65%;"></span></p>
+                            <p class="text-normal">預算價錢：<span class="ul-line" style="width:65%;"></span></p>
+                        </div>
+                        
+                        <div class="layout-cell" style="width: 38%; border-left: 1px dashed #CCCCCC; padding-left: 4%;">
+                            <div class="title-sub" style="margin-top:0;">🍢 街頭小食點列</div>
+                            <p class="text-normal">▪️ <span class="ul-line" style="width:80%;"></span></p>
+                            <p class="text-normal">▪️ <span class="ul-line" style="width:80%;"></span></p>
+                            <p class="text-normal">▪️ <span class="ul-line" style="width:80%;"></span></p>
+                            <p class="text-normal">▪️ <span class="ul-line" style="width:80%;"></span></p>
+                            <p class="text-normal">▪️ <span class="ul-line" style="width:80%;"></span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="layout-table" style="position: absolute; bottom: 25mm; left: 15mm; right: 15mm;">
+                        <div class="layout-cell" style="width: 55%;">
+                            <div class="title-sub" style="margin-top: 0;">🛍️ 戰利品 / 買咗啲咩</div>
+                            <div class="line-block" style="height: 28px;"></div>
+                            <div class="line-block" style="height: 28px;"></div>
+                            <div class="line-block" style="height: 28px;"></div>
+                            <div class="line-block" style="height: 28px;"></div>
+                        </div>
+                        <div class="layout-cell" style="width: 45%; padding-left: 5mm; vertical-align: bottom;">
+                            <div class="dashed-box" style="width: 80mm; height: 60mm; line-height: 60mm; margin-left: auto;">
+                                貼相位（下午）
+                            </div>
+                        </div>
+                    </div>`;
+                htmlStr += addPageFooter();
+
+                // ▶ 每日第3頁（晚上頁）
+                htmlStr += `<div class="pdf-page">
+                    <div class="title-main" style="border-bottom: 1px solid #888; padding-bottom: 5px;">Day ${i} ｜ 晚間與全日總結</div>
+                    
+                    <div class="title-sub">🌙 晚餐記錄</div>
+                    <p class="text-normal">餐廳名稱：<span class="ul-line" style="width:75%;"></span></p>
+                    <p class="text-normal">食咗啲咩：<span class="ul-line" style="width:75%;"></span></p>
+                    <p class="text-normal">特別體驗：<span class="ul-line" style="width:75%;"></span></p>
+                    
+                    <div class="title-sub" style="margin-top: 35px;">💰 全日支出總結 (${currency})</div>
+                    <table class="data-table" style="text-align: center;">
+                        <thead>
+                            <tr>
+                                <th style="text-align:center; font-size:12pt; padding:8px;">交通</th>
+                                <th style="text-align:center; font-size:12pt; padding:8px;">飲食</th>
+                                <th style="text-align:center; font-size:12pt; padding:8px;">購物</th>
+                                <th style="text-align:center; font-size:12pt; padding:8px;">雜項</th>
+                                <th style="text-align:center; font-size:12pt; padding:8px; background-color:#eaeaea;">合計</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="height:45px;">${currency} <span class="ul-line" style="min-width:50px;"></span></td>
+                                <td style="height:45px;">${currency} <span class="ul-line" style="min-width:50px;"></span></td>
+                                <td style="height:45px;">${currency} <span class="ul-line" style="min-width:50px;"></span></td>
+                                <td style="height:45px;">${currency} <span class="ul-line" style="min-width:50px;"></span></td>
+                                <td style="height:45px; background-color:#fafafa;"><strong>${currency}</strong> <span class="ul-line" style="min-width:50px;"></span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="title-sub" style="margin-top: 35px;">❤️ 今日最開心的一件事</div>
+                    <div class="line-block"></div>
+                    <div class="line-block"></div>
+                    <div class="line-block"></div>
+                    
+                    <div class="dashed-box" style="width: 100%; height: 80mm; position: absolute; bottom: 25mm; left: 15mm; right: 15mm; text-align: left; padding: 10px;">
+                        <span class="text-muted" style="font-size:11pt; color:#aaa;">Stamp & Ticket Area</span>
+                    </div>`;
+                htmlStr += addPageFooter();
+            }
+
+            /* ==========================================
+               倒數第3頁：單據收納頁
+            ========================================== */
+            htmlStr += `<div class="pdf-page">
+                <div class="title-main" style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px;">單據收納頁 Receipts Collection</div>
+                
+                <table class="data-table" style="height: 230mm; margin-top: 20px; border: none;">
+                    <tr style="border: none;">
+                        <td class="dashed-box" style="width:50%; height: 75mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
+                        <td class="dashed-box" style="width:50%; height: 75mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
+                    </tr>
+                    <tr style="border: none;">
+                        <td class="dashed-box" style="height: 75mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
+                        <td class="dashed-box" style="height: 75mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
+                    </tr>
+                    <tr style="border: none;">
+                        <td class="dashed-box" style="height: 75mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
+                        <td class="dashed-box" style="height: 75mm; padding: 10px; vertical-align: middle; text-align:center;">收據貼此</td>
+                    </tr>
+                </table>`;
+            htmlStr += addPageFooter();
+
+            /* ==========================================
+               倒數第2頁：地圖／單張貼貼頁
+            ========================================== */
+            htmlStr += `<div class="pdf-page">
+                <div class="title-main" style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px;">地圖 / 景點單張紀念頁</div>
+                <div class="dashed-box" style="width: 100%; height: 235mm; margin-top: 15px; text-align: left; padding: 15px;">
+                    <span class="text-muted">Free Space</span>
+                </div>`;
+            htmlStr += addPageFooter();
+
+            /* ==========================================
+               最後1頁：封底／後記頁
+            ========================================== */
+            htmlStr += `<div class="pdf-page">
+                <div class="title-main" style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px;">旅程後記 Epilogue</div>
+                
+                <div style="margin-top: 30px;">
+                    <div class="title-sub">✨ 成個旅程最難忘嘅三件事：</div>
+                    <p class="text-normal">1. <span class="ul-line" style="width:90%;"></span></p>
+                    <p class="text-normal">2. <span class="ul-line" style="width:90%;"></span></p>
+                    <p class="text-normal">3. <span class="ul-line" style="width:90%;"></span></p>
+                </div>
+                
+                <div style="margin-top: 40px;">
+                    <div class="title-sub">🎯 下次一定要再試嘅嘢：</div>
+                    <div class="line-block"></div>
+                    <div class="line-block"></div>
+                    <div class="line-block"></div>
+                </div>
+                
+                <div style="margin-top: 50px; padding: 25px; border: 2px dashed #999; border-radius: 8px; background-color: #fafafa;">
+                    <div class="title-sub" style="margin-top: 0; font-size:16pt;">💰 項目大總結</div>
+                    <p class="title-large" style="margin: 20px 0 0 0; font-size: 20pt;">總使費： ${currency} <span class="ul-line" style="width: 60%; min-width: 150px; border-bottom-width: 2px;"></span></p>
+                </div>
+                
+                <div style="text-align: center; margin-top: 40mm; font-size: 14pt; color: #7f8c8d; letter-spacing: 2px;">
+                    - 多謝使用 · 祝您下次旅程更精彩 -
+                </div>`;
+            htmlStr += addPageFooter();
+
+            document.getElementById('print-area').innerHTML = htmlStr;
+            window.print();
+        }
+    </script>
+</body>
+</html>

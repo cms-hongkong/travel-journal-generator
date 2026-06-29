@@ -313,13 +313,6 @@
                 border-bottom: 1px solid #000000;
                 height: 22px;
             }
-
-            /* 頁頂狀態欄 */
-            .header-meta-right {
-                text-align: right;
-                font-size: 11.5pt;
-                line-height: 1.6;
-            }
         }
     </style>
 </head>
@@ -427,20 +420,23 @@
 
         // 精準計算推導日期與星期幾文字
         function getOffsetDateFullStr(baseDateStr, offset) {
-            if (!baseDateStr) return { date: '____-__-__', week: '星期_' };
+            if (!baseDateStr) return { date: '____-__-__', week: '星期_', shortWeek: '_' };
             const d = new Date(baseDateStr);
             d.setDate(d.getDate() + offset);
             const yy = d.getFullYear();
             const mm = String(d.getMonth() + 1).padStart(2, '0');
             const dd = String(d.getDate()).padStart(2, '0');
             const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const shortWeekDays = ['日', '一', '二', '三', '四', '五', '六'];
             return {
                 date: `${yy}-${mm}-${dd}`,
-                week: weekDays[d.getDay()]
+                monthDay: `${mm}/${dd}`,
+                week: weekDays[d.getDay()],
+                shortWeek: shortWeekDays[d.getDay()]
             };
         }
 
-        // 建立時間軸結構 (修改：刪除時間軸最底部的交通項目橫線，最後一個時間點後直接結束)
+        // 建立時間軸結構 (最後一個時間點後直接結束)
         function makeTimeline(start, end) {
             let html = '<div class="timeline-box">';
             for(let h = start; h <= end; h++) {
@@ -632,16 +628,14 @@
                 const dayObj = getOffsetDateFullStr(startDate, i - 1);
                 const cityVal = document.getElementById(`city-day-${i}`).value || '自由行';
                 
-                // 修改：天氣圖示搬去同頁頂標題同一行右側（日期隔離）
-                const headerTitle = `Day ${i} ｜ ${cityVal} ｜ ${dayObj.date}（${dayObj.week}） ☀️ ☁️ 🌧️`;
+                // 修改 3：起床、出門搬到早上頁頂標題同一行右側，跟喺天氣圖示後面
+                const morningHeaderTitle = `Day ${i} ｜ ${cityVal} ｜ ${dayObj.date}（${dayObj.week}） ☀️ ☁️ 🌧️  起床：__:__  出門：__:__`;
+                const regularHeaderTitle = `Day ${i} ｜ ${cityVal} ｜ ${dayObj.date}（${dayObj.week}） ☀️ ☁️ 🌧️`;
 
-                // ▶ 每日第1頁（早上頁：買咗咩減至 8 行避免遮擋頁碼，修改：起床/出門擺同一行右上角）
+                // ▶ 每日第1頁（早上頁：買咗咩減至 8 行避免遮擋頁碼，起床/出門完美整合喺標題右側）
                 const morningHtml = `
                     <div class="layout-table" style="border-bottom: 2px solid #333333; padding-bottom: 6px; margin-bottom: 12px;">
-                        <div class="layout-cell" style="vertical-align: bottom;"><div class="title-main" style="font-size:15pt;">${headerTitle}</div></div>
-                        <div class="layout-cell header-meta-right" style="width: 220px; vertical-align: bottom; text-align: right;">
-                            <span style="font-size:10.5pt; font-weight: bold;">起床：__:__   出門：__:__</span>
-                        </div>
+                        <div class="layout-cell" style="vertical-align: bottom;"><div class="title-main" style="font-size:14pt;">${morningHeaderTitle}</div></div>
                     </div>
                     <div class="title-sub" style="margin-top: 5px; font-size: 11pt;">🌅 朝早行程時間軸 (06:00 - 12:00)</div>
                     ${makeTimeline(6, 12)}
@@ -655,8 +649,7 @@
                 // ▶ 每日第2頁（中午至下午頁：12:00 - 18:00）
                 const afternoonHtml = `
                     <div class="layout-table" style="border-bottom: 2px solid #333333; padding-bottom: 6px; margin-bottom: 12px;">
-                        <div class="layout-cell" style="vertical-align: bottom;"><div class="title-main" style="font-size:15pt;">${headerTitle}</div></div>
-                        <div class="layout-cell" style="width: 10px;"></div>
+                        <div class="layout-cell" style="vertical-align: bottom;"><div class="title-main" style="font-size:14pt;">${regularHeaderTitle}</div></div>
                     </div>
                     <div class="title-sub" style="margin-top: 5px; font-size: 11pt;">☀️ 下午行程時間軸 (12:00 - 18:00)</div>
                     ${makeTimeline(12, 18)}
@@ -670,8 +663,7 @@
                 // ▶ 每日第3頁（晚上頁：18:00 - 23:00）
                 const eveningHtml = `
                     <div class="layout-table" style="border-bottom: 2px solid #333333; padding-bottom: 6px; margin-bottom: 12px;">
-                        <div class="layout-cell" style="vertical-align: bottom;"><div class="title-main" style="font-size:15pt;">${headerTitle}</div></div>
-                        <div class="layout-cell" style="width: 10px;"></div>
+                        <div class="layout-cell" style="vertical-align: bottom;"><div class="title-main" style="font-size:14pt;">${regularHeaderTitle}</div></div>
                     </div>
                     <div class="title-sub" style="margin-top: 5px; font-size: 11pt;">🌙 晚上行程時間軸 (18:00 - 23:00)</div>
                     ${makeTimeline(18, 23)}
@@ -684,7 +676,7 @@
             }
 
             /* ==========================================
-               全日支出總結頁 (日期全自動計算生成，每15天自動分頁)
+               全日支出總結頁 (修改 1：表格標題改為「日期」，每行格式改為 Day X MM/DD（星期簡寫）)
             ========================================== */
             for (let e = 0; e < expensePages; e++) {
                 let expRows = '';
@@ -695,7 +687,7 @@
                     const dayObj = getOffsetDateFullStr(startDate, i - 1);
                     expRows += `
                         <tr>
-                            <td style="height: 38px; font-weight: bold; text-align: center; font-size: 10pt;">Day ${i}<br>${dayObj.date}（${dayObj.week}）</td>
+                            <td style="height: 38px; font-weight: bold; text-align: center; font-size: 10pt;">Day ${i} ${dayObj.monthDay}（${dayObj.shortWeek}）</td>
                             <td></td><td></td><td></td><td></td><td></td>
                         </tr>
                     `;
@@ -713,7 +705,7 @@
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th style="width: 22%; text-align: center;">日期（星期X）</th>
+                                <th style="width: 22%; text-align: center;">日期</th>
                                 <th style="width: 15.5%;">交通</th>
                                 <th style="width: 15.5%;">飲食</th>
                                 <th style="width: 15.5%;">購物</th>
@@ -729,7 +721,7 @@
             }
 
             /* ==========================================
-               後置頁面：最後2頁 (單據收納、地圖貼貼)
+               後置頁面：最後2頁 (單據收納、地圖貼貼) -> 修改 2：嚴謹修復閉合邏輯確保全頁空白無碼
             ========================================== */
             outputHTML += printContentPage('<div class="title-main" style="text-align:center; border-bottom: 2px solid #333333; padding-bottom: 8px;">單據收納頁 Receipts</div><div style="height:230mm;"></div>', false);
             outputHTML += printContentPage('<div class="title-main" style="text-align:center; border-bottom: 2px solid #333333; padding-bottom: 8px;">地圖 ／ 單張貼貼頁 Maps & Mementos</div><div style="height:230mm;"></div>', false);
@@ -741,9 +733,3 @@
     </script>
 </body>
 </html>
-"""
-
-with open("travel_journal_pdf_generator_v2.html", "w", encoding="utf-8") as f:
-    f.write(html_content)
-print("Updated V2 file successfully compiled via interpreter.")
-}

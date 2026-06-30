@@ -401,14 +401,22 @@
             `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" width="36" height="36"><circle cx="12" cy="12" r="10"/><path d="M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z"/></svg>` // 指南針
         ];
 
-        // 每頁隨機於四角分發 2-3 款細線圖案
+        // 修改 2：每頁隨機分發 4-6 款細線圖案，均勻分佈於四角與上下左右邊框位置
         function makePageDecorations() {
-            const count = Math.random() > 0.5 ? 3 : 2;
+            const count = Math.floor(Math.random() * 3) + 4; // 隨機生成 4、5 或 6 個
             const shuffled = [...svgDecorations].sort(() => 0.5 - Math.random());
             const picked = shuffled.slice(0, count);
+            
+            // 包含四角與四邊中點的 8 個邊緣位置樣式（完全排除中央區塊）
             const positions = [
-                "top: 5mm; left: 5mm;", "top: 5mm; right: 5mm;",
-                "bottom: 18mm; left: 5mm;", "bottom: 18mm; right: 5mm;"
+                "top: 5mm; left: 5mm;", 
+                "top: 5mm; right: 5mm;",
+                "bottom: 18mm; left: 5mm;", 
+                "bottom: 18mm; right: 5mm;",
+                "top: 5mm; left: 50%; transform: translateX(-50%);",
+                "bottom: 18mm; left: 50%; transform: translateX(-50%);",
+                "top: 50%; left: 5mm; transform: translateY(-50%);",
+                "top: 50%; right: 5mm; transform: translateY(-50%);"
             ].sort(() => 0.5 - Math.random());
             
             let html = '';
@@ -436,7 +444,7 @@
             };
         }
 
-        // 建立時間軸結構 (最後一個時間點後直接結束)
+        // 建立時間軸結構
         function makeTimeline(start, end) {
             let html = '<div class="timeline-box">';
             for(let h = start; h <= end; h++) {
@@ -586,7 +594,7 @@
             }
 
             /* ==========================================
-               總行程一覽頁 (每頁最多14天)
+               總行程一覽頁 (垂直滿版均勻分佈，佔滿A4頁面)
             ========================================== */
             for (let g = 0; g < overviewPages; g++) {
                 let rows = '';
@@ -598,19 +606,20 @@
                     const cityVal = document.getElementById(`city-day-${i}`).value || '自由行';
                     rows += `
                         <tr>
-                            <td style="height: 40px; font-weight: bold;">Day ${i}<br><span style="font-size:9.5pt; color:#666; font-weight:normal;">${dayObj.date}（${dayObj.week}）</span></td>
+                            <td style="font-weight: bold;">Day ${i}<br><span style="font-size:9.5pt; color:#666; font-weight:normal;">${dayObj.date}（${dayObj.week}）</span></td>
                             <td><strong>${cityVal}</strong></td>
                             <td></td>
                         </tr>
                     `;
                 }
 
+                // 修改 3：表格標題精確設定為就咁「日期」，內文與高度完全保留
                 const overviewHtml = `
-                    <div class="title-main" style="text-align:center; border-bottom: 2px solid #333333; padding-bottom: 8px; margin-bottom: 20px;">總行程一覽 Overview</div>
-                    <table class="data-table">
+                    <div class="title-main" style="text-align:center; border-bottom: 2px solid #333333; padding-bottom: 8px; margin-bottom: 15px;">總行程一覽 Overview</div>
+                    <table class="data-table" style="height: 232mm; table-layout: fixed; margin-bottom: 0;">
                         <thead>
                             <tr>
-                                <th style="width: 35%;">日期（星期X）</th>
+                                <th style="width: 35%;">日期</th>
                                 <th style="width: 35%;">主打城市 / 地區</th>
                                 <th style="width: 30%;">今晚住邊間酒店</th>
                             </tr>
@@ -628,7 +637,6 @@
                 const dayObj = getOffsetDateFullStr(startDate, i - 1);
                 const cityVal = document.getElementById(`city-day-${i}`).value || '自由行';
                 
-                // 修改 3：起床、出門搬到早上頁頂標題同一行右側，跟喺天氣圖示後面
                 const morningHeaderTitle = `Day ${i} ｜ ${cityVal} ｜ ${dayObj.date}（${dayObj.week}） ☀️ ☁️ 🌧️  起床：__:__  出門：__:__`;
                 const regularHeaderTitle = `Day ${i} ｜ ${cityVal} ｜ ${dayObj.date}（${dayObj.week}） ☀️ ☁️ 🌧️`;
 
@@ -676,7 +684,7 @@
             }
 
             /* ==========================================
-               全日支出總結頁 (修改 1：表格標題改為「日期」，每行格式改為 Day X MM/DD（星期簡寫）)
+               全日支出總結頁 (每15天自動分頁，保持高度佔滿A4)
             ========================================== */
             for (let e = 0; e < expensePages; e++) {
                 let expRows = '';
@@ -687,7 +695,7 @@
                     const dayObj = getOffsetDateFullStr(startDate, i - 1);
                     expRows += `
                         <tr>
-                            <td style="height: 38px; font-weight: bold; text-align: center; font-size: 10pt;">Day ${i} ${dayObj.monthDay}（${dayObj.shortWeek}）</td>
+                            <td style="font-weight: bold; text-align: center; font-size: 10pt;">Day ${i} ${dayObj.monthDay}（${dayObj.shortWeek}）</td>
                             <td></td><td></td><td></td><td></td><td></td>
                         </tr>
                     `;
@@ -695,14 +703,14 @@
 
                 const isLastExpensePage = (e === expensePages - 1);
                 const totalSummaryFieldHtml = isLastExpensePage ? `
-                    <div style="margin-top: 30px; text-align: right; padding-right: 5mm;">
+                    <div style="margin-top: 20px; text-align: right; padding-right: 5mm;">
                         <span class="title-main" style="font-size: 14pt;">總使費： ${currency} ___________________________</span>
                     </div>
                 ` : '';
 
                 const expenseHtml = `
                     <div class="title-main" style="text-align:center; border-bottom: 2px solid #333333; padding-bottom: 8px; margin-bottom: 15px;">全日支出總結 Expense Summary</div>
-                    <table class="data-table">
+                    <table class="data-table" style="height: 215mm; table-layout: fixed; margin-bottom: 0;">
                         <thead>
                             <tr>
                                 <th style="width: 22%; text-align: center;">日期</th>
@@ -721,7 +729,7 @@
             }
 
             /* ==========================================
-               後置頁面：最後2頁 (單據收納、地圖貼貼) -> 修改 2：嚴謹修復閉合邏輯確保全頁空白無碼
+               後置頁面：最後2頁 (單據收納、地圖貼貼)
             ========================================== */
             outputHTML += printContentPage('<div class="title-main" style="text-align:center; border-bottom: 2px solid #333333; padding-bottom: 8px;">單據收納頁 Receipts</div><div style="height:230mm;"></div>', false);
             outputHTML += printContentPage('<div class="title-main" style="text-align:center; border-bottom: 2px solid #333333; padding-bottom: 8px;">地圖 ／ 單張貼貼頁 Maps & Mementos</div><div style="height:230mm;"></div>', false);
